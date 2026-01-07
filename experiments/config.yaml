@@ -1,0 +1,7 @@
+env_id: "MiniGrid-Empty-5x5-v0"
+mode: "handhint"
+   # options: baseline, handhint, learnedhint
+seed: 42
+timesteps: 10000
+abstraction_path: "/content/drive/MyDrive/rl_lora_project/models/abstraction.pth"
+save_dir: "/content/drive/MyDrive/rl_lora_project/models"
