@@ -1,0 +1,29 @@
+experiment:
+  id: "phase0_sanity_check"
+  seed: 42
+  device: "auto"  # auto, cpu, cuda
+
+env:
+  id: "MiniGrid-DoorKey-6x6-v0"
+  max_steps: 100
+  subgoal_timeout: 20
+
+llm:
+  model_name: "microsoft/phi-2"
+  load_in_4bit: true
+  use_lora: true
+  mock_mode: "auto" # auto: use mock if no GPU. true: force mock. false: force real.
+  temperature: 0.1
+  max_new_tokens: 50
+
+rl:
+  algo: "ppo"
+  total_timesteps: 10000
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.0

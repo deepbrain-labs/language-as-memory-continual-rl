@@ -1,0 +1,14 @@
+torch>=2.0.0
+numpy
+pandas
+gymnasium
+minigrid
+stable-baselines3
+transformers
+accelerate
+bitsandbytes
+peft
+trl
+tensorboard
+pyyaml
+protobuf==3.20.0
