@@ -12,7 +12,7 @@ llm:
   model_name: "microsoft/phi-2"
   load_in_4bit: true
   use_lora: true
-  mock_mode: "auto" # auto: use mock if no GPU. true: force mock. false: force real.
+  mock_mode: true # auto: use mock if no GPU. true: force mock. false: force real.
   temperature: 0.1
   max_new_tokens: 50
 
