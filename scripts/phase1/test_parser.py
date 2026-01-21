@@ -29,7 +29,7 @@ def test_parser():
         if obj != exp_obj and exp_obj != "none":
              print(f"⚠ Object mismatch: Expected {exp_obj}, got {obj}")
              
-    print("\n✅ PHASE 1: Parser Test Passed (Visual check).")
+    print("\n✔ PHASE 1: Parser Test Passed (Visual check).")
 
 if __name__ == "__main__":
     test_parser()
