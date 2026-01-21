@@ -11,7 +11,7 @@ cd language-as-memory-continual-rl
 ### Install Dependencies
 ```bash
 pip install -r requirements.txt
-pip install gymnasium minigrid jsonlines
+pip install gymnasium minigrid jsonlines trl peft
 ```
 
 ## 2. Phase 0: Environment Bring-Up (Mandatory)
@@ -30,36 +30,44 @@ python scripts/setup/test_model_loading.py
 Verify the core pipeline (State -> LLM -> Executor) without training.
 
 ```bash
-# Test State Serialization
-python scripts/phase1/test_serialization.py
-
-# Test Subgoal Parser
-python scripts/phase1/test_parser.py
-
-# Test LLM Planner (Mock or Real)
-python scripts/phase1/test_planner.py
-
-# Run Full Chain POC
 python scripts/phase1/run_chain.py
 ```
-**Exit Criteria**: All scripts pass, and `run_chain.py` logs a successful episode sequence.
+**Exit Criteria**: Logs a successful episode sequence.
 
 ## 4. Phase 2: Synthetic Expert Data
-Generate dataset for PPO/DPO training (Aligning the LLM).
+Generate dataset for PPO/DPO training.
 
 ```bash
-# 1. Generate Expert Traces (minigrid solvers)
-# Creates data/expert_traces_{train,val,test}.json
+# Generate Traces -> Pairs -> Verify
 python src/data_gen/generate_traces.py
-
-# 2. Convert to Preference Pairs (DPO format)
-# Creates data/dpo_{train,val,test}.jsonl
 python src/data_gen/create_preference_pairs.py
-
-# 3. Verify Integrity
 python src/data_gen/verify_dataset.py
 ```
 **Exit Criteria**: `verify_dataset.py` outputs `✅ GLOBAL CHECK PASSED`.
 
-## 5. Phase 3 (Coming Soon)
-- PPO Training
+## 5. Phase 3: LLM Alignment (DPO / RLHF)
+Fine-tune Phi-2 to align with expert subgoals.
+
+### Option A: DPO (Recommended)
+Direct Preference Optimization using expert pairs.
+```bash
+python src/llm/train_dpo.py --load_in_4bit --epochs 3 --batch_size 1 --output_dir results_dpo
+```
+
+### Option B: RLHF (Baseline)
+Train Reward Model then PPO.
+```bash
+# 1. Train Reward Model
+python src/llm/train_rm.py --load_in_4bit --epochs 1 --output_dir results_rm
+
+# 2. Run PPO (Requires DPO/SFT model or Base)
+python src/llm/train_rlhf.py --load_in_4bit --reward_model_path results_rm --dpo_model_dir results_dpo --output_dir results_ppo
+```
+
+### Evaluation
+Benchmark the aligned model.
+```bash
+# Evaluate DPO Model
+python src/phase3/evaluate_alignment.py --adapter_path results_dpo --load_in_4bit
+```
+**Exit Criteria**: Accuracy increase vs Base model.
