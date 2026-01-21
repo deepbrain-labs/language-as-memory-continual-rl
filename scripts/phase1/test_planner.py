@@ -40,7 +40,7 @@ def test_planner():
     subgoal3 = planner.generate_subgoal(state3)
     print(f"\nState: {state3}\nSubgoal: {subgoal3}")
     
-    print("\n✅ PHASE 1: Planner Test Passed.")
+    print("\n✔ PHASE 1: Planner Test Passed.")
 
 if __name__ == "__main__":
     test_planner()
