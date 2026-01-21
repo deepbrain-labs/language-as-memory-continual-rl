@@ -176,7 +176,7 @@ def run_chain_poc():
             print(f"\nEpisode finished at step {step}. Success: {reward > 0}")
             break
             
-    print("\n✅ PHASE 1: POC Chain Execution Complete.")
+    print("\n✔ PHASE 1: POC Chain Execution Complete.")
 
 if __name__ == "__main__":
     run_chain_poc()
