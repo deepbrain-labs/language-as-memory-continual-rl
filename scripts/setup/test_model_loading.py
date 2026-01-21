@@ -64,8 +64,8 @@ if __name__ == "__main__":
     else:
         try:
             load_phi2_test()
-            print("\n✅ PHASE 0: Model Loading Test Passed.")
+            print("\n ==== PHASE 0: Model Loading Test Passed. ====")
         except AssertionError as e:
-            print(f"\n❌ PHASE 0: VRAM Constraint Failed: {e}")
+            print(f"\n XXXX PHASE 0: VRAM Constraint Failed: {e} XXXX")
         except Exception as e:
-            print(f"\n❌ PHASE 0: Model Loading Failed: {e}")
+            print(f"\n XXXX PHASE 0: Model Loading Failed: {e} XXXX")
