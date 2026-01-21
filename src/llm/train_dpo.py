@@ -50,8 +50,10 @@ def train_dpo(args):
         target_modules=["Wqkv", "out_proj", "fc1", "fc2"] 
     )
 
-    # Training Args
-    training_args = TrainingArguments(
+    from trl import DPOConfig
+
+    # DPO Config
+    dpo_config = DPOConfig(
         output_dir=args.output_dir,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
@@ -63,21 +65,21 @@ def train_dpo(args):
         save_strategy="epoch",
         eval_strategy="epoch",
         remove_unused_columns=False,
-        report_to="tensorboard"
+        report_to="tensorboard",
+        beta=args.beta,
+        max_prompt_length=args.max_prompt_length,
+        max_length=args.max_length,
     )
 
     # Trainer
     print("Initializing DPOTrainer")
     dpo_trainer = DPOTrainer(
         model,
-        args=training_args,
-        beta=args.beta,
+        args=dpo_config,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         peft_config=peft_config,
-        max_prompt_length=args.max_prompt_length,
-        max_length=args.max_length,
     )
 
     print("Starting training...")
