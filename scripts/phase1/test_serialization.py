@@ -34,7 +34,7 @@ def test_serialization():
     assert "carrying nothing" in text1, "❌ Carrying status incorrect"
     
     print("✔ Content validation passed.")
-    print("\n✅ PHASE 1: Serialization Test Passed.")
+    print("\n✔ PHASE 1: Serialization Test Passed.")
 
 if __name__ == "__main__":
     test_serialization()
