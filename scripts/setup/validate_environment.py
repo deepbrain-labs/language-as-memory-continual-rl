@@ -77,7 +77,7 @@ if __name__ == "__main__":
     storage_ok = check_storage()
     
     if gpu_ok and deps_ok and storage_ok:
-        print("\n✅ PHASE 0: Environment Ready.")
+        print("\n✔ PHASE 0: Environment Ready.")
     else:
         print("\n❌ PHASE 0: Environment Issues Found.")
         sys.exit(1)
