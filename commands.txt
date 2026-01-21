@@ -51,8 +51,9 @@ Fine-tune Phi-2 to align with expert subgoals.
 ### Option A: DPO (Recommended)
 Direct Preference Optimization using expert pairs.
 ```bash
-# Optimized for Colab T4 (Faster: Batch 4, Workers 4)
-python src/llm/train_dpo.py --load_in_4bit --epochs 3 --batch_size 4 --grad_accum 2 --num_workers 4 --output_dir results_dpo
+# Optimized for Colab T4 (Faster: Batch 4, Workers 4, Short Seq)
+# NOTE: DPO typically converges in 1-3 epochs. Do NOT run for 100 epochs.
+python src/llm/train_dpo.py --load_in_4bit --epochs 3 --batch_size 4 --grad_accum 2 --num_workers 4 --max_length 512 --max_prompt_length 256 --output_dir results_dpo
 ```
 
 ### Option B: RLHF (Baseline)
