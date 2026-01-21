@@ -1,5 +1,6 @@
 import torch
 import argparse
+import os
 from datasets import load_dataset
 from trl import PPOTrainer, PPOConfig
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig, AutoModelForCausalLM
@@ -63,24 +64,40 @@ def train_rlhf(args):
             print(f"Failed to load adapter: {e}")
 
     # Reward Model
-    print("Loading Reward Model...")
+    print(f"Loading Reward Model from {args.reward_model_path}")
+    # Load Base
     reward_model = AutoModelForSequenceClassification.from_pretrained(
-        args.reward_model_path, 
+        args.model_name,
         num_labels=1,
-        device_map="auto" if torch.cuda.is_available() else "cpu"
+        quantization_config=bnb_config,
+        device_map="auto" if torch.cuda.is_available() else "cpu",
+        trust_remote_code=True
     )
     if reward_model.config.pad_token_id is None:
         reward_model.config.pad_token_id = tokenizer.pad_token_id
-
-    # Value Model
+    
+    # Load Adapter if path is a directory (LoRA)
+    if args.reward_model_path and os.path.exists(os.path.join(args.reward_model_path, "adapter_config.json")):
+        print(f"Loading RM Adapter from {args.reward_model_path}")
+        from peft import PeftModel
+        reward_model = PeftModel.from_pretrained(reward_model, args.reward_model_path)
+    
+    # Value Model (Initialized from RM base)
     print("Loading Value Model...")
     value_model = AutoModelForSequenceClassification.from_pretrained(
-        args.reward_model_path, # Init from RM weights as a good starting point
+        args.model_name,
         num_labels=1,
-        device_map="auto" if torch.cuda.is_available() else "cpu"
+        quantization_config=bnb_config,
+        device_map="auto" if torch.cuda.is_available() else "cpu",
+        trust_remote_code=True
     )
     if value_model.config.pad_token_id is None:
         value_model.config.pad_token_id = tokenizer.pad_token_id
+     
+    # Load Value Adapter if RM was LoRA
+    if args.reward_model_path and os.path.exists(os.path.join(args.reward_model_path, "adapter_config.json")):
+        print(f"Loading VM Adapter from {args.reward_model_path}")
+        value_model = PeftModel.from_pretrained(value_model, args.reward_model_path)
 
     print("Initializing PPOTrainer...")
     trainer = PPOTrainer(
