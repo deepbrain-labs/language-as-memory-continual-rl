@@ -53,6 +53,8 @@ def train_reward_model(args):
         logging_steps=10,
         save_strategy="epoch",
         remove_unused_columns=False,
+        dataloader_num_workers=args.num_workers,
+        gradient_checkpointing=args.gradient_checkpointing,
     )
 
     print("Initializing RewardTrainer...")
@@ -93,6 +95,8 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--lora_r", type=int, default=8)
     parser.add_argument("--lora_alpha", type=int, default=16)
+    parser.add_argument("--gradient_checkpointing", action="store_true")
+    parser.add_argument("--num_workers", type=int, default=4)
 
     args = parser.parse_args()
     train_reward_model(args)
