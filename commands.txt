@@ -1,0 +1,24 @@
+# Phase 0 Instructions
+
+1.  **Install Requirements**
+    Ensure all dependencies are installed.
+    ```bash
+    pip install -r requirements.txt
+    pip install gymnasium
+    ```
+
+2.  **Run Environment Validation**
+    This script verifies GPU compatibility (T4/V100/A100), checks VRAM, and ensures all libraries (accelerate, bitsandbytes, etc.) are importable.
+    ```bash
+    python scripts/setup/validate_environment.py
+    ```
+
+3.  **Run Model Loading Test**
+    This script loads Phi-2 in 4-bit mode with LoRA adapters and asserts that VRAM usage is under 8GB.
+    ```bash
+    python scripts/setup/test_model_loading.py
+    ```
+
+**Exit Criteria Met if:**
+- `validate_environment.py` output "✅ PHASE 0: Environment Ready."
+- `test_model_loading.py` output "✅ PHASE 0: Model Loading Test Passed."
