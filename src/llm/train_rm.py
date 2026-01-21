@@ -40,7 +40,8 @@ def train_reward_model(args):
         lora_alpha=args.lora_alpha,
         bias="none",
         task_type=TaskType.SEQ_CLS,
-        target_modules=["Wqkv", "out_proj", "fc1", "fc2"]
+        target_modules=["Wqkv", "out_proj", "fc1", "fc2"],
+        modules_to_save=["score"]
     )
 
     training_args = TrainingArguments(
@@ -54,13 +55,25 @@ def train_reward_model(args):
         remove_unused_columns=False,
     )
 
-    trainer = RewardTrainer(
-        model=model,
-        tokenizer=tokenizer,
-        args=training_args,
-        train_dataset=dataset,
-        peft_config=peft_config,
-    )
+    print("Initializing RewardTrainer...")
+    try:
+        trainer = RewardTrainer(
+            model=model,
+            processing_class=tokenizer,
+            args=training_args,
+            train_dataset=dataset,
+            peft_config=peft_config,
+        )
+    except TypeError:
+        # Fallback for older TRL versions that use 'tokenizer'
+        print("Fallback to 'tokenizer' argument for RewardTrainer")
+        trainer = RewardTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            args=training_args,
+            train_dataset=dataset,
+            peft_config=peft_config,
+        )
 
     print("Starting RM Training...")
     trainer.train()
