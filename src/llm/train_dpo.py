@@ -69,6 +69,8 @@ def train_dpo(args):
         beta=args.beta,
         max_prompt_length=args.max_prompt_length,
         max_length=args.max_length,
+        gradient_checkpointing=args.gradient_checkpointing,
+        dataloader_num_workers=args.num_workers,
     )
 
     # Trainer
@@ -105,6 +107,8 @@ if __name__ == "__main__":
     parser.add_argument("--beta", type=float, default=0.1)
     parser.add_argument("--max_prompt_length", type=int, default=512)
     parser.add_argument("--max_length", type=int, default=1024)
+    parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing (saves VRAM, trades compute)")
+    parser.add_argument("--num_workers", type=int, default=4, help="Number of dataloader workers")
     
     args = parser.parse_args()
     # Default load_in_4bit to True if not specified, but argparse store_true defaults to False.
