@@ -11,9 +11,8 @@ cd language-as-memory-continual-rl
 ### Install Dependencies
 ```bash
 pip install -r requirements.txt
-pip install gymnasium minigrid
+pip install gymnasium minigrid jsonlines
 ```
-*(Ensure you have PyTorch with CUDA support if running on GPU)*
 
 ## 2. Phase 0: Environment Bring-Up (Mandatory)
 Validate that your environment (Colab/Local) is ready for experiments.
@@ -31,7 +30,7 @@ python scripts/setup/test_model_loading.py
 Verify the core pipeline (State -> LLM -> Executor) without training.
 
 ```bash
-# Test State Serialization (Determinism)
+# Test State Serialization
 python scripts/phase1/test_serialization.py
 
 # Test Subgoal Parser
@@ -40,11 +39,27 @@ python scripts/phase1/test_parser.py
 # Test LLM Planner (Mock or Real)
 python scripts/phase1/test_planner.py
 
-# Run Full Chain POC (Bot Execution)
+# Run Full Chain POC
 python scripts/phase1/run_chain.py
 ```
-**Exit Criteria**: All scripts pass, and `run_chain.py` logs a successful episode sequence (Go to Key -> Pick Key -> Go to Door -> Open Door -> Go to Goal).
+**Exit Criteria**: All scripts pass, and `run_chain.py` logs a successful episode sequence.
 
-## 4. Phase 2 (Coming Soon)
-- PPO Training Baseline
-- Continual Learning Experiments
+## 4. Phase 2: Synthetic Expert Data
+Generate dataset for PPO/DPO training (Aligning the LLM).
+
+```bash
+# 1. Generate Expert Traces (minigrid solvers)
+# Creates data/expert_traces_{train,val,test}.json
+python src/data_gen/generate_traces.py
+
+# 2. Convert to Preference Pairs (DPO format)
+# Creates data/dpo_{train,val,test}.jsonl
+python src/data_gen/create_preference_pairs.py
+
+# 3. Verify Integrity
+python src/data_gen/verify_dataset.py
+```
+**Exit Criteria**: `verify_dataset.py` outputs `✅ GLOBAL CHECK PASSED`.
+
+## 5. Phase 3 (Coming Soon)
+- PPO Training
