@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from datetime import datetime
+import wandb
 
 def setup_logger(name, save_dir=None, filename="experiment.log", level=logging.INFO):
     """
@@ -44,6 +45,14 @@ class ExperimentLogger:
         """
         msg = f"Step {step}: " + ", ".join([f"{k}={v}" for k, v in metrics.items()])
         self.logger.info(msg)
+        
+        if wandb.run is not None:
+             wandb.log(metrics, step=step)
+
+    def init_wandb(self, project: str, config: dict, name: str = None):
+        """Initializes Weights & Biases logging."""
+        wandb.init(project=project, config=config, name=name)
+
         # if self.writer:
         #     for k, v in metrics.items():
         #         self.writer.add_scalar(k, v, step)
