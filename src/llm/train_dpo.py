@@ -105,8 +105,8 @@ if __name__ == "__main__":
     parser.add_argument("--grad_accum", type=int, default=8)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--beta", type=float, default=0.1)
-    parser.add_argument("--max_prompt_length", type=int, default=512)
-    parser.add_argument("--max_length", type=int, default=1024)
+    parser.add_argument("--max_prompt_length", type=int, default=256)
+    parser.add_argument("--max_length", type=int, default=512)
     parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing (saves VRAM, trades compute)")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of dataloader workers")
     
