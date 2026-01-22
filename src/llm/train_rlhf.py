@@ -105,6 +105,9 @@ def train_rlhf(args):
         value_model = PeftModel.from_pretrained(value_model, args.reward_model_path)
 
     print("Initializing PPOTrainer...")
+    def collator(data):
+        return dict((key, [d[key] for d in data]) for key in data[0])
+
     trainer = PPOTrainer(
         args=config,
         processing_class=tokenizer,
@@ -113,6 +116,7 @@ def train_rlhf(args):
         reward_model=reward_model,
         value_model=value_model,
         train_dataset=dataset,
+        data_collator=collator,
     )
 
     print("Starting PPO Training...")
