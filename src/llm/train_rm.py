@@ -10,6 +10,9 @@ from trl import RewardTrainer, RewardConfig
 def train_reward_model(args):
     print(f"Loading data from {args.train_file}")
     dataset = load_dataset("json", data_files=args.train_file, split="train")
+    if args.max_train_samples is not None and args.max_train_samples > 0:
+        print(f"Limiting dataset to {args.max_train_samples} samples")
+        dataset = dataset.select(range(min(len(dataset), args.max_train_samples)))
 
     # Quantization
     bnb_config = None
@@ -57,6 +60,7 @@ def train_reward_model(args):
         remove_unused_columns=False,
         dataloader_num_workers=args.num_workers,
         gradient_checkpointing=args.gradient_checkpointing,
+        max_length=args.max_length,
     )
 
     print("Initializing RewardTrainer...")
@@ -99,6 +103,8 @@ if __name__ == "__main__":
     parser.add_argument("--lora_alpha", type=int, default=16)
     parser.add_argument("--gradient_checkpointing", action="store_true")
     parser.add_argument("--num_workers", type=int, default=0, help="Set to 0 for Windows to avoid DataLoader hangs")
+    parser.add_argument("--max_train_samples", type=int, default=None)
+    parser.add_argument("--max_length", type=int, default=2048)
 
     args = parser.parse_args()
 
