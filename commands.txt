@@ -65,7 +65,7 @@ Train Reward Model then PPO.
 python src/llm/train_rm.py --load_in_4bit --epochs 1 --batch_size 4 --grad_accum 2 --num_workers 0 --max_length 512 --max_train_samples 1000 --output_dir results_rm
 
 # 2. Run PPO (Requires DPO/SFT model or Base)
-python src/llm/train_rlhf.py --load_in_4bit --reward_model_path results_rm --dpo_model_dir results_dpo --output_dir results_ppo
+python src/llm/train_rlhf.py --load_in_4bit --reward_model_path results_rm --dpo_model_dir results_dpo --output_dir results_ppo --num_workers 0 --max_train_samples 100
 ```
 
 ### Evaluation
