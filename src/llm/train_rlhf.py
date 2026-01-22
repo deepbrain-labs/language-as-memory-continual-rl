@@ -106,7 +106,12 @@ def train_rlhf(args):
 
     print("Initializing PPOTrainer...")
     def collator(data):
-        return tokenizer.pad(data, padding=True, return_tensors="pt")
+        # Filter to only input_ids so tokenizer.pad handles them correctly (respecting left-padding)
+        features = [{"input_ids": d["input_ids"]} for d in data]
+        batch = tokenizer.pad(features, padding=True, return_tensors="pt")
+        # Reuse padded input_ids for query since they are identical in our dataset
+        batch["query"] = batch["input_ids"]
+        return batch
 
     trainer = PPOTrainer(
         args=config,
