@@ -3,7 +3,7 @@ import torch
 from datasets import load_dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
 from peft import LoraConfig, TaskType
-from trl import RewardTrainer
+from trl import RewardTrainer, RewardConfig
 
 def train_reward_model(args):
     print(f"Loading data from {args.train_file}")
@@ -44,7 +44,7 @@ def train_reward_model(args):
         modules_to_save=["score"]
     )
 
-    training_args = TrainingArguments(
+    training_args = RewardConfig(
         output_dir=args.output_dir,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
