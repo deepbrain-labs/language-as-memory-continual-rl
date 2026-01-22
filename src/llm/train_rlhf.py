@@ -106,7 +106,7 @@ def train_rlhf(args):
 
     print("Initializing PPOTrainer...")
     def collator(data):
-        return dict((key, [d[key] for d in data]) for key in data[0])
+        return tokenizer.pad(data, padding=True, return_tensors="pt")
 
     trainer = PPOTrainer(
         args=config,
