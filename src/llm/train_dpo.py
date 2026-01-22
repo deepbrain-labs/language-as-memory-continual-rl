@@ -10,7 +10,15 @@ def train_dpo(args):
     print(f"Loading data from {args.train_file} and {args.eval_file}")
     # Load Dataset
     train_dataset = load_dataset("json", data_files=args.train_file, split="train")
+    if args.max_train_samples > 0 and len(train_dataset) > args.max_train_samples:
+        print(f"Downsampling train dataset from {len(train_dataset)} to {args.max_train_samples} for speed.")
+        train_dataset = train_dataset.shuffle(seed=42).select(range(args.max_train_samples))
+    
     eval_dataset = load_dataset("json", data_files=args.eval_file, split="train")
+    if args.max_train_samples > 0 and len(eval_dataset) > (args.max_train_samples // 10):
+        # Keep eval small proportionally
+        eval_limit = max(100, args.max_train_samples // 10)
+        eval_dataset = eval_dataset.select(range(min(len(eval_dataset), eval_limit)))
 
     # Quantization
     bnb_config = None
@@ -47,7 +55,7 @@ def train_dpo(args):
         lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules=["Wqkv", "out_proj", "fc1", "fc2"] 
+        target_modules=["Wqkv", "out_proj"] # Optimized: Attention only (Faster than all linear)
     )
 
     from trl import DPOConfig
@@ -109,6 +117,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_length", type=int, default=512)
     parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing (saves VRAM, trades compute)")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of dataloader workers")
+    parser.add_argument("--max_train_samples", type=int, default=-1, help="Cap training data for speed (e.g. 1000). -1 for all.")
     
     args = parser.parse_args()
     # Default load_in_4bit to True if not specified, but argparse store_true defaults to False.
