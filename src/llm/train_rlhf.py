@@ -32,8 +32,10 @@ def train_rlhf(args):
         ds = load_dataset("json", data_files=data_path, split="train")
         def tokenize(sample):
             sample["input_ids"] = tokenizer.encode(sample["prompt"])
+            sample["query"] = sample["input_ids"]
             return sample
         ds = ds.map(tokenize, batched=False)
+        ds = ds.remove_columns(["prompt", "chosen", "rejected"])
         return ds
 
     dataset = build_dataset(args.train_file)
@@ -83,7 +85,6 @@ def train_rlhf(args):
     # Load Adapter if path is a directory (LoRA)
     if args.reward_model_path and os.path.exists(os.path.join(args.reward_model_path, "adapter_config.json")):
         print(f"Loading RM Adapter from {args.reward_model_path}")
-        from peft import PeftModel
         reward_model = PeftModel.from_pretrained(reward_model, args.reward_model_path)
     
     # Value Model (Initialized from RM base)
