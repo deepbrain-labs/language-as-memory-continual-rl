@@ -1,5 +1,7 @@
 import argparse
 import torch
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from datasets import load_dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
 from peft import LoraConfig, TaskType
@@ -96,7 +98,12 @@ if __name__ == "__main__":
     parser.add_argument("--lora_r", type=int, default=8)
     parser.add_argument("--lora_alpha", type=int, default=16)
     parser.add_argument("--gradient_checkpointing", action="store_true")
-    parser.add_argument("--num_workers", type=int, default=4)
+    parser.add_argument("--num_workers", type=int, default=0, help="Set to 0 for Windows to avoid DataLoader hangs")
 
     args = parser.parse_args()
+
+    if os.name == 'nt' and args.num_workers > 0:
+        print(f"Warning: forcing num_workers=0 (was {args.num_workers}) on Windows to prevent DataLoader hang.")
+        args.num_workers = 0
+
     train_reward_model(args)
