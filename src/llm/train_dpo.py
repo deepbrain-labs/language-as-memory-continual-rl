@@ -55,7 +55,7 @@ def train_dpo(args):
         lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules=["Wqkv", "out_proj"] # Optimized: Attention only (Faster than all linear)
+        target_modules=["Wqkv", "out_proj", "fc1", "fc2"]
     )
 
     from trl import DPOConfig
