@@ -1,6 +1,15 @@
 import argparse
 import torch
 import os
+
+# --- DeepMind Standard Environment Configuration ---
+# Suppress TensorFlow and CUDA verbose logging
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3" 
+# Auto-configure WandB
+os.environ["WANDB_API_KEY"] = "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"
+os.environ["WANDB_PROJECT"] = "language-as-memory-continual-rl"
+# ---------------------------------------------------
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from datasets import load_dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
