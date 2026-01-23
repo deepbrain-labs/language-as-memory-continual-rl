@@ -1,0 +1,42 @@
+_wandb:
+    value:
+        cli_version: 0.21.1
+        e:
+            uqumr6rzsz56ofi0jxvlm5da8368oc8k:
+                codePath: verify_wandb.py
+                codePathLocal: verify_wandb.py
+                cpu_count: 4
+                cpu_count_logical: 8
+                disk:
+                    /:
+                        total: "1000203087872"
+                        used: "106339741696"
+                email: deepbrainlabs.uk@gmail.com
+                executable: C:\Users\bisha\AppData\Local\Programs\Python\Python313\python.exe
+                git:
+                    commit: 9ce3aa67aa9f65f58d8c02471de5e5254d375ebc
+                    remote: https://github.com/deepbrain-labs/language-as-memory-continual-rl.git
+                host: LAPTOP-UI16OVI5
+                memory:
+                    total: "6349565952"
+                os: Windows-11-10.0.26200-SP0
+                program: D:\Github\language-as-memory-continual-rl\verify_wandb.py
+                python: CPython 3.13.3
+                root: D:\Github\language-as-memory-continual-rl
+                startedAt: "2026-01-23T09:31:06.370765Z"
+                writerId: uqumr6rzsz56ofi0jxvlm5da8368oc8k
+        m: []
+        python_version: 3.13.3
+        t:
+            "1":
+                - 105
+            "2":
+                - 105
+            "3":
+                - 2
+            "4": 3.13.3
+            "5": 0.21.1
+            "8":
+                - 3
+            "12": 0.21.1
+            "13": windows-amd64
