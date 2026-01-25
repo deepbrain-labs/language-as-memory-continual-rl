@@ -2,14 +2,6 @@ import torch
 import argparse
 import os
 
-# --- DeepMind Standard Environment Configuration ---
-# Suppress TensorFlow and CUDA verbose logging
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3" 
-# Auto-configure WandB
-os.environ["WANDB_API_KEY"] = "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"
-os.environ["WANDB_PROJECT"] = "language-as-memory-continual-rl"
-# ---------------------------------------------------
-
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from datasets import load_dataset
 from trl import PPOTrainer, PPOConfig
@@ -62,10 +54,21 @@ def train_rlhf(args):
             bnb_4bit_compute_dtype=torch.float16,
         )
 
+    # Determine device map strategy
+    # To avoid PPO RuntimeErrors with "auto" splitting models across GPUs incorrectly,
+    # we force everything onto the Current Device (usually cuda:0) if available.
+    device_map = None
+    if torch.cuda.is_available():
+        # Force strict placement on the current device to ensure all models (Policy, Reward, Value)
+        # stay on the same GPU. This prevents "Expected all tensors to be on the same device" errors.
+        device_map = {"": torch.cuda.current_device()}
+    else:
+        device_map = "cpu"
+
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
         quantization_config=bnb_config,
-        device_map="auto" if torch.cuda.is_available() else "cpu",
+        device_map=device_map,
         trust_remote_code=True
     )
     model.config.use_cache = False 
@@ -85,7 +88,7 @@ def train_rlhf(args):
         args.model_name,
         num_labels=1,
         quantization_config=bnb_config,
-        device_map="auto" if torch.cuda.is_available() else "cpu",
+        device_map=device_map,
         trust_remote_code=True
     )
     if reward_model.config.pad_token_id is None:
@@ -102,7 +105,7 @@ def train_rlhf(args):
         args.model_name,
         num_labels=1,
         quantization_config=bnb_config,
-        device_map="auto" if torch.cuda.is_available() else "cpu",
+        device_map=device_map,
         trust_remote_code=True
     )
     if value_model.config.pad_token_id is None:
