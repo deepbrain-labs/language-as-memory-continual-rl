@@ -2,8 +2,13 @@ import gymnasium as gym
 import minigrid
 import json
 import os
+import sys
 import numpy as np
 from tqdm import tqdm
+
+# Add project root to path
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
+
 from src.envs.wrappers import SubgoalWrapper
 from src.data_gen.minigrid_solver import BFSController, get_low_level_plan
 from src.data_gen.oracle import Oracle
@@ -79,10 +84,10 @@ if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
     
     # Train
-    generate_dataset(num_episodes=50, env_id="MiniGrid-DoorKey-6x6-v0", output_path="data/expert_traces_train.json", start_seed=1000)
+    generate_dataset(num_episodes=200, env_id="MiniGrid-DoorKey-6x6-v0", output_path="data/expert_traces_train.json", start_seed=1000)
     
     # Val
-    generate_dataset(num_episodes=10, env_id="MiniGrid-DoorKey-6x6-v0", output_path="data/expert_traces_val.json", start_seed=2000)
+    generate_dataset(num_episodes=50, env_id="MiniGrid-DoorKey-6x6-v0", output_path="data/expert_traces_val.json", start_seed=2000)
     
     # Test (Held Out)
-    generate_dataset(num_episodes=10, env_id="MiniGrid-DoorKey-8x8-v0", output_path="data/expert_traces_test.json", start_seed=3000)
+    generate_dataset(num_episodes=50, env_id="MiniGrid-DoorKey-8x8-v0", output_path="data/expert_traces_test.json", start_seed=3000)

@@ -1,0 +1,28 @@
+{
+  "os":  "Windows-11-10.0.26200-SP0",
+  "python":  "CPython 3.13.3",
+  "startedAt":  "2026-01-23T09:31:06.370765Z",
+  "program":  "D:\\Github\\language-as-memory-continual-rl\\verify_wandb.py",
+  "codePath":  "verify_wandb.py",
+  "codePathLocal":  "verify_wandb.py",
+  "git":  {
+    "remote":  "https://github.com/deepbrain-labs/language-as-memory-continual-rl.git",
+    "commit":  "9ce3aa67aa9f65f58d8c02471de5e5254d375ebc"
+  },
+  "email":  "deepbrainlabs.uk@gmail.com",
+  "root":  "D:\\Github\\language-as-memory-continual-rl",
+  "host":  "LAPTOP-UI16OVI5",
+  "executable":  "C:\\Users\\bisha\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+  "cpu_count":  4,
+  "cpu_count_logical":  8,
+  "disk":  {
+    "/":  {
+      "total":  "1000203087872",
+      "used":  "106339741696"
+    }
+  },
+  "memory":  {
+    "total":  "6349565952"
+  },
+  "writerId":  "uqumr6rzsz56ofi0jxvlm5da8368oc8k"
+}

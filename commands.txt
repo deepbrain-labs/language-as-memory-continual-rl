@@ -1,0 +1,77 @@
+# Project Setup & Execution Instructions
+
+## 1. Environment Setup
+
+### Clone Repository
+```bash
+git clone https://github.com/deepbrain-labs/language-as-memory-continual-rl.git
+cd language-as-memory-continual-rl
+```
+
+### Install Dependencies
+```bash
+pip install -r requirements.txt
+pip install gymnasium minigrid jsonlines trl peft
+```
+
+## 2. Phase 0: Environment Bring-Up (Mandatory)
+Validate that your environment (Colab/Local) is ready for experiments.
+
+```bash
+# Validate GPU, VRAM, and Dependencies
+python scripts/setup/validate_environment.py
+
+# Validate 4-bit Model Loading (Phi-2)
+python scripts/setup/test_model_loading.py
+```
+**Exit Criteria**: Both scripts should output `PHASE 0: ... Passed`.
+
+## 3. Phase 1: End-To-End Functional POC
+Verify the core pipeline (State -> LLM -> Executor) without training.
+
+```bash
+python scripts/phase1/run_chain.py
+```
+**Exit Criteria**: Logs a successful episode sequence.
+
+## 4. Phase 2: Synthetic Expert Data
+Generate dataset for PPO/DPO training.
+
+```bash
+# Generate Traces -> Pairs -> Verify
+python src/data_gen/generate_traces.py
+python src/data_gen/create_preference_pairs.py
+python src/data_gen/verify_dataset.py
+```
+**Exit Criteria**: `verify_dataset.py` outputs `✅ GLOBAL CHECK PASSED`.
+
+## 5. Phase 3: LLM Alignment (DPO / RLHF)
+Fine-tune Phi-2 to align with expert subgoals.
+
+### Option A: DPO (Recommended)
+Direct Preference Optimization using expert pairs.
+```bash
+# FASTEST (Colab Free Tier optimized):
+# - 1 Epoch is usually enough for alignment POC.
+# - limit samples to 1000 (enough signal, much faster).
+# - reduced batch/accum since samples are few.
+python src/llm/train_dpo.py --load_in_4bit --epochs 1 --batch_size 2 --grad_accum 4 --num_workers 0 --max_length 512 --max_prompt_length 256 --max_train_samples 1000 --output_dir results_dpo
+```
+
+### Option B: RLHF (Baseline)
+Train Reward Model then PPO.
+```bash
+# 1. Train Reward Model
+python src/llm/train_rm.py --load_in_4bit --epochs 1 --batch_size 4 --grad_accum 2 --num_workers 0 --max_length 512 --max_train_samples 1000 --output_dir results_rm
+
+# 2. Run PPO (Requires DPO/SFT model or Base)
+python src/llm/train_rlhf.py --load_in_4bit --reward_model_path results_rm --dpo_model_dir results_dpo --output_dir results_ppo --num_workers 0 --max_train_samples 100
+```
+
+### Evaluation
+Benchmark the aligned model.
+```bash
+# Evaluate DPO Model
+python src/phase3/evaluate_alignment.py --adapter_path results_dpo --load_in_4bit
+```
+**Exit Criteria**: Accuracy increase vs Base model.

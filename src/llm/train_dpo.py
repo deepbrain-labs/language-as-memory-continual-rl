@@ -1,5 +1,14 @@
 import os
 import torch
+
+# --- DeepMind Standard Environment Configuration ---
+# Suppress TensorFlow and CUDA verbose logging
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3" 
+# Auto-configure WandB
+os.environ["WANDB_API_KEY"] = "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"
+os.environ["WANDB_PROJECT"] = "language-as-memory-continual-rl"
+# ---------------------------------------------------
+
 from datasets import load_dataset
 from peft import LoraConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TrainingArguments
@@ -10,7 +19,15 @@ def train_dpo(args):
     print(f"Loading data from {args.train_file} and {args.eval_file}")
     # Load Dataset
     train_dataset = load_dataset("json", data_files=args.train_file, split="train")
+    if args.max_train_samples > 0 and len(train_dataset) > args.max_train_samples:
+        print(f"Downsampling train dataset from {len(train_dataset)} to {args.max_train_samples} for speed.")
+        train_dataset = train_dataset.shuffle(seed=42).select(range(args.max_train_samples))
+    
     eval_dataset = load_dataset("json", data_files=args.eval_file, split="train")
+    if args.max_train_samples > 0 and len(eval_dataset) > (args.max_train_samples // 10):
+        # Keep eval small proportionally
+        eval_limit = max(100, args.max_train_samples // 10)
+        eval_dataset = eval_dataset.select(range(min(len(eval_dataset), eval_limit)))
 
     # Quantization
     bnb_config = None
@@ -47,11 +64,13 @@ def train_dpo(args):
         lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules=["Wqkv", "out_proj", "fc1", "fc2"] 
+        target_modules=["Wqkv", "out_proj", "fc1", "fc2"]
     )
 
-    # Training Args
-    training_args = TrainingArguments(
+    from trl import DPOConfig
+
+    # DPO Config
+    dpo_config = DPOConfig(
         output_dir=args.output_dir,
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
@@ -63,21 +82,23 @@ def train_dpo(args):
         save_strategy="epoch",
         eval_strategy="epoch",
         remove_unused_columns=False,
-        report_to="tensorboard"
+        report_to="tensorboard",
+        beta=args.beta,
+        max_prompt_length=args.max_prompt_length,
+        max_length=args.max_length,
+        gradient_checkpointing=args.gradient_checkpointing,
+        dataloader_num_workers=args.num_workers,
     )
 
     # Trainer
     print("Initializing DPOTrainer")
     dpo_trainer = DPOTrainer(
         model,
-        args=training_args,
-        beta=args.beta,
+        args=dpo_config,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         peft_config=peft_config,
-        max_prompt_length=args.max_prompt_length,
-        max_length=args.max_length,
     )
 
     print("Starting training...")
@@ -101,8 +122,11 @@ if __name__ == "__main__":
     parser.add_argument("--grad_accum", type=int, default=8)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--beta", type=float, default=0.1)
-    parser.add_argument("--max_prompt_length", type=int, default=512)
-    parser.add_argument("--max_length", type=int, default=1024)
+    parser.add_argument("--max_prompt_length", type=int, default=256)
+    parser.add_argument("--max_length", type=int, default=512)
+    parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing (saves VRAM, trades compute)")
+    parser.add_argument("--num_workers", type=int, default=4, help="Number of dataloader workers")
+    parser.add_argument("--max_train_samples", type=int, default=-1, help="Cap training data for speed (e.g. 1000). -1 for all.")
     
     args = parser.parse_args()
     # Default load_in_4bit to True if not specified, but argparse store_true defaults to False.

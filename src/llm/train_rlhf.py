@@ -1,5 +1,8 @@
 import torch
 import argparse
+import os
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from datasets import load_dataset
 from trl import PPOTrainer, PPOConfig
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, BitsAndBytesConfig, AutoModelForCausalLM
@@ -30,11 +33,16 @@ def train_rlhf(args):
         ds = load_dataset("json", data_files=data_path, split="train")
         def tokenize(sample):
             sample["input_ids"] = tokenizer.encode(sample["prompt"])
+            sample["query"] = sample["input_ids"]
             return sample
         ds = ds.map(tokenize, batched=False)
+        ds = ds.remove_columns(["prompt", "chosen", "rejected"])
         return ds
 
     dataset = build_dataset(args.train_file)
+    if args.max_train_samples is not None and args.max_train_samples > 0:
+        print(f"Limiting dataset to {args.max_train_samples} samples")
+        dataset = dataset.select(range(min(len(dataset), args.max_train_samples)))
     
     # Model (Policy)
     print("Loading Policy Model...")
@@ -46,10 +54,21 @@ def train_rlhf(args):
             bnb_4bit_compute_dtype=torch.float16,
         )
 
+    # Determine device map strategy
+    # To avoid PPO RuntimeErrors with "auto" splitting models across GPUs incorrectly,
+    # we force everything onto the Current Device (usually cuda:0) if available.
+    device_map = None
+    if torch.cuda.is_available():
+        # Force strict placement on the current device to ensure all models (Policy, Reward, Value)
+        # stay on the same GPU. This prevents "Expected all tensors to be on the same device" errors.
+        device_map = {"": torch.cuda.current_device()}
+    else:
+        device_map = "cpu"
+
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
         quantization_config=bnb_config,
-        device_map="auto" if torch.cuda.is_available() else "cpu",
+        device_map=device_map,
         trust_remote_code=True
     )
     model.config.use_cache = False 
@@ -63,26 +82,49 @@ def train_rlhf(args):
             print(f"Failed to load adapter: {e}")
 
     # Reward Model
-    print("Loading Reward Model...")
+    print(f"Loading Reward Model from {args.reward_model_path}")
+    # Load Base
     reward_model = AutoModelForSequenceClassification.from_pretrained(
-        args.reward_model_path, 
+        args.model_name,
         num_labels=1,
-        device_map="auto" if torch.cuda.is_available() else "cpu"
+        quantization_config=bnb_config,
+        device_map=device_map,
+        trust_remote_code=True
     )
     if reward_model.config.pad_token_id is None:
         reward_model.config.pad_token_id = tokenizer.pad_token_id
-
-    # Value Model
+    
+    # Load Adapter if path is a directory (LoRA)
+    if args.reward_model_path and os.path.exists(os.path.join(args.reward_model_path, "adapter_config.json")):
+        print(f"Loading RM Adapter from {args.reward_model_path}")
+        reward_model = PeftModel.from_pretrained(reward_model, args.reward_model_path)
+    
+    # Value Model (Initialized from RM base)
     print("Loading Value Model...")
     value_model = AutoModelForSequenceClassification.from_pretrained(
-        args.reward_model_path, # Init from RM weights as a good starting point
+        args.model_name,
         num_labels=1,
-        device_map="auto" if torch.cuda.is_available() else "cpu"
+        quantization_config=bnb_config,
+        device_map=device_map,
+        trust_remote_code=True
     )
     if value_model.config.pad_token_id is None:
         value_model.config.pad_token_id = tokenizer.pad_token_id
+     
+    # Load Value Adapter if RM was LoRA
+    if args.reward_model_path and os.path.exists(os.path.join(args.reward_model_path, "adapter_config.json")):
+        print(f"Loading VM Adapter from {args.reward_model_path}")
+        value_model = PeftModel.from_pretrained(value_model, args.reward_model_path)
 
     print("Initializing PPOTrainer...")
+    def collator(data):
+        # Filter to only input_ids so tokenizer.pad handles them correctly (respecting left-padding)
+        features = [{"input_ids": d["input_ids"]} for d in data]
+        batch = tokenizer.pad(features, padding=True, return_tensors="pt")
+        # Reuse padded input_ids for query since they are identical in our dataset
+        batch["query"] = batch["input_ids"]
+        return batch
+
     trainer = PPOTrainer(
         args=config,
         processing_class=tokenizer,
@@ -91,6 +133,7 @@ def train_rlhf(args):
         reward_model=reward_model,
         value_model=value_model,
         train_dataset=dataset,
+        data_collator=collator,
     )
 
     print("Starting PPO Training...")
@@ -112,6 +155,13 @@ if __name__ == "__main__":
     parser.add_argument("--grad_accum", type=int, default=1)
     parser.add_argument("--load_in_4bit", action="store_true")
     parser.add_argument("--save_steps", type=int, default=10)
+    parser.add_argument("--max_train_samples", type=int, default=None)
+    parser.add_argument("--num_workers", type=int, default=0, help="Set to 0 for Windows")
     
     args = parser.parse_args()
+
+    if os.name == 'nt' and args.num_workers > 0:
+        print(f"Warning: forcing num_workers=0 (was {args.num_workers}) on Windows to prevent DataLoader hang.")
+        args.num_workers = 0
+
     train_rlhf(args)
